@@ -1,0 +1,130 @@
+﻿@using Microsoft.EntityFrameworkCore;
+
+
+@page "/addbook"
+
+<h3>Library</h3>
+
+<button class="btn btn-primary" @onclick="createDB">Create DB</button>
+<button class="btn btn-primary" @onclick="getDB">View</button>
+
+<br><br>
+
+@foreach (var book in libBooks)
+{
+    <h4>@book.Title (@book.Publisher.Name)</h4>
+    <h6>by @book.Author</h6>
+}
+
+<br><br>
+<h3>AddBook</h3>
+<label>Title</label><br>
+<input @bind ="title" type="text"><br>
+
+<label>Publisher</label><br>
+<input @bind = "publisher" type="text"><br>
+
+<label>Author</label><br>
+<input @bind = "author" type="text"> <br>
+
+<label>ISBN</label><br>
+<input @bind = "isbn" type="text">
+<button class="btn btn-primary" @onclick="insertDB">Add</button>
+
+@code {
+    private List<mysqlefcore.Book> libBooks = new List<mysqlefcore.Book>();
+    
+    //used for retrieving data from webform
+    string title, publisher, author, isbn;
+
+    private void insertDB(){
+        // Add book
+        using(var context = new mysqlefcore.LibraryContext()){
+
+        // Adds a publisher
+        var publishername = new mysqlefcore.Publisher
+        {
+          Name = publisher
+        };
+        context.Publisher.Add(publishername);
+
+        context.Book.Add(new mysqlefcore.Book
+        {
+          ISBN = isbn,
+          Title = title,
+          Author = author,
+          Language = "",
+          Publisher = publishername
+        });
+
+        //clear fields
+
+        isbn = "";
+        title = "";
+        author = "";
+        publisher = "";
+
+
+        // Saves changes
+        context.SaveChanges();
+
+        }
+    }
+
+    private void getDB(){
+      //clear local list
+      libBooks.RemoveAll((x) => true);
+      // Gets and prints all books in database
+      using (var context = new mysqlefcore.LibraryContext())
+      {
+        var books = context.Book.Include(p => p.Publisher);
+        foreach(var book in books)
+        {
+          var b = new mysqlefcore.Book();
+
+          libBooks.Add(book);
+        }
+      }
+    }
+    private void createDB(){
+      using(var context = new mysqlefcore.LibraryContext())
+      {
+        //Delete the database if it already exists
+        context.Database.EnsureDeleted(); 
+
+        // Creates the database if not exists
+        context.Database.EnsureCreated();
+
+        // Adds a publisher
+        var publisher = new mysqlefcore.Publisher
+        {
+          Name = "Mariner Books"
+        };
+        context.Publisher.Add(publisher);
+
+        // Adds some books
+        context.Book.Add(new mysqlefcore.Book
+        {
+          ISBN = "978-0544003415",
+          Title = "The Lord of the Rings",
+          Author = "J.R.R. Tolkien",
+          Language = "English",
+          Pages = 1216,
+          Publisher = publisher
+        });
+        context.Book.Add(new mysqlefcore.Book
+        {
+          ISBN = "978-0547247762",
+          Title = "The Sealed Letter",
+          Author = "Emma Donoghue",
+          Language = "English",
+          Pages = 416,
+          Publisher = publisher
+        });
+
+        // Saves changes
+        context.SaveChanges();
+      }
+    }
+
+}
